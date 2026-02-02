@@ -1,12 +1,14 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode } from "react";
-import { WizardState } from "@/lib/types";
+import { WizardState, AdjustmentState, defaultAdjustments } from "@/lib/types";
 
 interface WizardContextType extends WizardState {
   setOriginalImage: (file: File, preview: string) => void;
   setBackgroundRemovedImage: (image: string, mask: string) => void;
   setBackgroundImage: (image: string) => void;
+  setAdjustments: (adjustments: Partial<AdjustmentState>) => void;
+  resetAdjustments: () => void;
   setFinalImage: (image: string) => void;
   setLoading: (isLoading: boolean) => void;
   nextStep: () => void;
@@ -23,6 +25,7 @@ const initialState: WizardState = {
   backgroundRemovedImage: null,
   maskImage: null,
   backgroundImage: null,
+  adjustments: { ...defaultAdjustments },
   finalImage: null,
   isLoading: false,
 };
@@ -53,6 +56,27 @@ export function WizardProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  const setAdjustments = (adjustments: Partial<AdjustmentState>) => {
+    setState((prev) => ({
+      ...prev,
+      adjustments: {
+        ...prev.adjustments,
+        ...adjustments,
+        backgroundEffects: {
+          ...prev.adjustments.backgroundEffects,
+          ...(adjustments.backgroundEffects || {}),
+        },
+      },
+    }));
+  };
+
+  const resetAdjustments = () => {
+    setState((prev) => ({
+      ...prev,
+      adjustments: { ...defaultAdjustments },
+    }));
+  };
+
   const setFinalImage = (image: string) => {
     setState((prev) => ({
       ...prev,
@@ -70,7 +94,7 @@ export function WizardProvider({ children }: { children: ReactNode }) {
   const nextStep = () => {
     setState((prev) => ({
       ...prev,
-      currentStep: Math.min(prev.currentStep + 1, 3),
+      currentStep: Math.min(prev.currentStep + 1, 4),
     }));
   };
 
@@ -90,6 +114,8 @@ export function WizardProvider({ children }: { children: ReactNode }) {
     setOriginalImage,
     setBackgroundRemovedImage,
     setBackgroundImage,
+    setAdjustments,
+    resetAdjustments,
     setFinalImage,
     setLoading,
     nextStep,

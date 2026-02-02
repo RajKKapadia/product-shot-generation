@@ -93,7 +93,7 @@ export default function BackgroundPage() {
       return;
     }
     nextStep();
-    router.push("/final");
+    router.push("/adjust");
   };
 
   if (!backgroundRemovedImage) {
@@ -246,7 +246,7 @@ export default function BackgroundPage() {
             disabled={!backgroundImage}
             className="bg-black hover:bg-gray-800 text-white w-full sm:w-auto"
           >
-            Next: View Final Result
+            Next: Adjust
           </Button>
         </div>
       </main>
