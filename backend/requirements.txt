@@ -134,7 +134,9 @@ pydantic==2.12.5
 pydantic-core==2.41.5
     # via pydantic
 python-dotenv==1.2.1
-    # via uvicorn
+    # via
+    #   hf-rmbg-2p0-briaai
+    #   uvicorn
 python-multipart==0.0.22
     # via hf-rmbg-2p0-briaai
 pyyaml==6.0.3

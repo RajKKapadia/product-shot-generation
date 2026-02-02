@@ -6,13 +6,13 @@ from typing import Optional
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from PIL import Image, ImageFilter
 import torch
 from torchvision import transforms
 from transformers import AutoModelForImageSegmentation
 from openai import OpenAI
-import httpx
 from dotenv import load_dotenv, find_dotenv
 
 # Ignore warnings
@@ -35,7 +35,7 @@ class BackgroundRequest(BaseModel):
 
 class BackgroundResponse(BaseModel):
     background_image: str
-    url: str
+    url: Optional[str] = None
 
 
 class RemoveBackgroundResponse(BaseModel):
@@ -189,6 +189,19 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Add CORS middleware to allow frontend access
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3001",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 # Root endpoint
@@ -259,27 +272,19 @@ async def generate_background(request: BackgroundRequest):
 
         # Generate image with DALL-E 3
         response = openai_client.images.generate(
-            model="gpt-image-1.5",
+            model="dall-e-3",
             prompt=f"Generate a background image for a product shot with the following prompt: {request.prompt}",
             size=request.size,
-            quality="auto",
+            quality="standard",
+            response_format="b64_json",
             n=1,
         )
 
-        # Get the image URL
-        image_url = response.data[0].url
+        # Format base64 with data URI prefix to match other endpoints
+        b64_data = response.data[0].b64_json
+        formatted_image = f"data:image/png;base64,{b64_data}"
 
-        # Download the image
-        async with httpx.AsyncClient() as client:
-            img_response = await client.get(image_url)
-            img_response.raise_for_status()
-            img_bytes = img_response.content
-
-        # Convert to PIL and then to base64
-        pil_image = bytes_to_pil(img_bytes)
-        image_b64 = pil_to_base64(pil_image)
-
-        return BackgroundResponse(background_image=image_b64, url=image_url)
+        return BackgroundResponse(background_image=formatted_image, url=None)
 
     except Exception as e:
         raise HTTPException(
