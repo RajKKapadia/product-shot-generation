@@ -10,6 +10,7 @@ export interface AdjustmentState {
   productScale: number;
   productRotation: number;
   backgroundEffects: BackgroundEffects;
+  previewSize: { width: number; height: number }; // Size of the preview container when adjustments were made
 }
 
 export const defaultAdjustments: AdjustmentState = {
@@ -22,6 +23,7 @@ export const defaultAdjustments: AdjustmentState = {
     blur: 0,
     saturation: 100,
   },
+  previewSize: { width: 0, height: 0 },
 };
 
 export interface WizardState {
@@ -29,6 +31,7 @@ export interface WizardState {
   originalImage: File | null;
   originalImagePreview: string | null;
   backgroundRemovedImage: string | null;
+  editedImage: string | null;  // Touched-up image after manual erasing
   maskImage: string | null;
   backgroundImage: string | null;
   adjustments: AdjustmentState;

@@ -29,6 +29,7 @@ export default function BackgroundPage() {
   const router = useRouter();
   const {
     backgroundRemovedImage,
+    editedImage,
     backgroundImage,
     setBackgroundImage,
     isLoading,
@@ -36,18 +37,21 @@ export default function BackgroundPage() {
     nextStep,
   } = useWizard();
 
+  // Use edited image if available, otherwise use background removed image
+  const productImage = editedImage || backgroundRemovedImage;
+
   const [prompt, setPrompt] = useState("");
   const [size, setSize] = useState<ImageSize>("1024x1024");
   const [error, setError] = useState<string | null>(null);
   const [uploadedBg, setUploadedBg] = useState<string | null>(null);
   const [generatedBg, setGeneratedBg] = useState<string | null>(null);
 
-  // Redirect if no background removed image
+  // Redirect if no product image
   useEffect(() => {
-    if (!backgroundRemovedImage) {
-      router.push("/upload");
+    if (!productImage) {
+      router.push("/touchup");
     }
-  }, [backgroundRemovedImage, router]);
+  }, [productImage, router]);
 
   const handleUploadBackground = async (file: File) => {
     try {
@@ -96,7 +100,7 @@ export default function BackgroundPage() {
     router.push("/adjust");
   };
 
-  if (!backgroundRemovedImage) {
+  if (!productImage) {
     return null;
   }
 
@@ -119,7 +123,7 @@ export default function BackgroundPage() {
             Your Product (Background Removed)
           </Label>
           <ImagePreview
-            src={backgroundRemovedImage}
+            src={productImage}
             alt="Product with background removed"
             className="max-w-xs mx-auto"
             showCheckered
@@ -236,7 +240,7 @@ export default function BackgroundPage() {
         <div className="flex flex-col sm:flex-row justify-center gap-4 w-full max-w-md mx-auto">
           <Button
             variant="outline"
-            onClick={() => router.push("/upload")}
+            onClick={() => router.push("/touchup")}
             className="border-2 border-black w-full sm:w-auto"
           >
             Back

@@ -6,6 +6,7 @@ import { WizardState, AdjustmentState, defaultAdjustments } from "@/lib/types";
 interface WizardContextType extends WizardState {
   setOriginalImage: (file: File, preview: string) => void;
   setBackgroundRemovedImage: (image: string, mask: string) => void;
+  setEditedImage: (image: string) => void;
   setBackgroundImage: (image: string) => void;
   setAdjustments: (adjustments: Partial<AdjustmentState>) => void;
   resetAdjustments: () => void;
@@ -23,6 +24,7 @@ const initialState: WizardState = {
   originalImage: null,
   originalImagePreview: null,
   backgroundRemovedImage: null,
+  editedImage: null,
   maskImage: null,
   backgroundImage: null,
   adjustments: { ...defaultAdjustments },
@@ -49,6 +51,13 @@ export function WizardProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  const setEditedImage = (image: string) => {
+    setState((prev) => ({
+      ...prev,
+      editedImage: image,
+    }));
+  };
+
   const setBackgroundImage = (image: string) => {
     setState((prev) => ({
       ...prev,
@@ -66,6 +75,10 @@ export function WizardProvider({ children }: { children: ReactNode }) {
           ...prev.adjustments.backgroundEffects,
           ...(adjustments.backgroundEffects || {}),
         },
+        // Only update previewSize if it's provided and has valid values
+        previewSize: adjustments.previewSize && adjustments.previewSize.width > 0
+          ? adjustments.previewSize
+          : prev.adjustments.previewSize,
       },
     }));
   };
@@ -94,7 +107,7 @@ export function WizardProvider({ children }: { children: ReactNode }) {
   const nextStep = () => {
     setState((prev) => ({
       ...prev,
-      currentStep: Math.min(prev.currentStep + 1, 4),
+      currentStep: Math.min(prev.currentStep + 1, 5),
     }));
   };
 
@@ -113,6 +126,7 @@ export function WizardProvider({ children }: { children: ReactNode }) {
     ...state,
     setOriginalImage,
     setBackgroundRemovedImage,
+    setEditedImage,
     setBackgroundImage,
     setAdjustments,
     resetAdjustments,

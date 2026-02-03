@@ -65,7 +65,7 @@ export default function UploadPage() {
 
   const handleNext = () => {
     nextStep();
-    router.push("/background");
+    router.push("/touchup");
   };
 
   return (
@@ -157,7 +157,7 @@ export default function UploadPage() {
                     onClick={handleNext}
                     className="bg-black hover:bg-gray-800 text-white w-full sm:w-auto"
                   >
-                    Next: Choose Background
+                    Next: Touch-up
                   </Button>
                 </div>
               </div>

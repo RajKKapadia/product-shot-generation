@@ -14,6 +14,7 @@ export default function AdjustPage() {
   const router = useRouter();
   const {
     backgroundRemovedImage,
+    editedImage,
     backgroundImage,
     adjustments,
     setAdjustments,
@@ -21,16 +22,47 @@ export default function AdjustPage() {
     nextStep,
   } = useWizard();
 
+  // Use edited image if available, otherwise use background removed image
+  const productImage = editedImage || backgroundRemovedImage;
+
   const previewRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [backgroundAspectRatio, setBackgroundAspectRatio] = useState(1);
+
+  // Load background image to get its aspect ratio
+  useEffect(() => {
+    if (!backgroundImage) return;
+    
+    const img = new Image();
+    img.onload = () => {
+      setBackgroundAspectRatio(img.width / img.height);
+    };
+    img.src = backgroundImage;
+  }, [backgroundImage]);
+
+  // Capture preview size after aspect ratio is set and component is laid out
+  useEffect(() => {
+    // Small delay to ensure the DOM has updated with the new aspect ratio
+    const timer = setTimeout(() => {
+      if (previewRef.current && previewRef.current.clientWidth > 0) {
+        setAdjustments({
+          previewSize: {
+            width: previewRef.current.clientWidth,
+            height: previewRef.current.clientHeight,
+          },
+        });
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [backgroundAspectRatio, setAdjustments]);
 
   // Redirect if no background image
   useEffect(() => {
-    if (!backgroundRemovedImage || !backgroundImage) {
+    if (!productImage || !backgroundImage) {
       router.push("/background");
     }
-  }, [backgroundRemovedImage, backgroundImage, router]);
+  }, [productImage, backgroundImage, router]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
@@ -42,11 +74,15 @@ export default function AdjustPage() {
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging) return;
+    const previewSize = previewRef.current
+      ? { width: previewRef.current.clientWidth, height: previewRef.current.clientHeight }
+      : { width: 0, height: 0 };
     setAdjustments({
       productPosition: {
         x: e.clientX - dragStart.x,
         y: e.clientY - dragStart.y,
       },
+      previewSize,
     });
   };
 
@@ -55,6 +91,15 @@ export default function AdjustPage() {
   };
 
   const handleNext = () => {
+    // Capture final preview size before navigating
+    if (previewRef.current) {
+      setAdjustments({
+        previewSize: {
+          width: previewRef.current.clientWidth,
+          height: previewRef.current.clientHeight,
+        },
+      });
+    }
     nextStep();
     router.push("/final");
   };
@@ -87,7 +132,7 @@ export default function AdjustPage() {
     cursor: isDragging ? "grabbing" : "grab",
   };
 
-  if (!backgroundRemovedImage || !backgroundImage) {
+  if (!productImage || !backgroundImage) {
     return null;
   }
 
@@ -117,7 +162,8 @@ export default function AdjustPage() {
               <CardContent>
                 <div
                   ref={previewRef}
-                  className="relative w-full aspect-square overflow-hidden rounded-lg bg-gray-100"
+                  className="relative w-full overflow-hidden rounded-lg bg-gray-100"
+                  style={{ aspectRatio: backgroundAspectRatio }}
                   onMouseMove={handleMouseMove}
                   onMouseUp={handleMouseUp}
                   onMouseLeave={handleMouseUp}
@@ -126,13 +172,13 @@ export default function AdjustPage() {
                   <img
                     src={backgroundImage}
                     alt="Background"
-                    className="absolute inset-0 w-full h-full object-cover"
+                    className="absolute inset-0 w-full h-full object-contain"
                     style={backgroundFilterStyle}
                     draggable={false}
                   />
                   {/* Product Layer */}
                   <img
-                    src={backgroundRemovedImage}
+                    src={productImage}
                     alt="Product"
                     className="absolute inset-0 w-full h-full object-contain select-none"
                     style={productTransformStyle}
@@ -166,14 +212,18 @@ export default function AdjustPage() {
                   </div>
                   <Slider
                     value={[adjustments.productPosition.x]}
-                    onValueChange={([value]) =>
+                    onValueChange={([value]) => {
+                      const previewSize = previewRef.current
+                        ? { width: previewRef.current.clientWidth, height: previewRef.current.clientHeight }
+                        : { width: 0, height: 0 };
                       setAdjustments({
                         productPosition: {
                           ...adjustments.productPosition,
                           x: value,
                         },
-                      })
-                    }
+                        previewSize,
+                      });
+                    }}
                     min={-300}
                     max={300}
                     step={1}
@@ -189,14 +239,18 @@ export default function AdjustPage() {
                   </div>
                   <Slider
                     value={[adjustments.productPosition.y]}
-                    onValueChange={([value]) =>
+                    onValueChange={([value]) => {
+                      const previewSize = previewRef.current
+                        ? { width: previewRef.current.clientWidth, height: previewRef.current.clientHeight }
+                        : { width: 0, height: 0 };
                       setAdjustments({
                         productPosition: {
                           ...adjustments.productPosition,
                           y: value,
                         },
-                      })
-                    }
+                        previewSize,
+                      });
+                    }}
                     min={-300}
                     max={300}
                     step={1}

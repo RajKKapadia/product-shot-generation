@@ -5,9 +5,10 @@ import { useWizard } from "@/contexts/WizardContext";
 const steps = [
   { id: 0, name: "Home", label: "Start" },
   { id: 1, name: "Upload", label: "Upload" },
-  { id: 2, name: "Background", label: "Background" },
-  { id: 3, name: "Adjust", label: "Adjust" },
-  { id: 4, name: "Final", label: "Complete" },
+  { id: 2, name: "Touchup", label: "Touch-up" },
+  { id: 3, name: "Background", label: "Background" },
+  { id: 4, name: "Adjust", label: "Adjust" },
+  { id: 5, name: "Final", label: "Complete" },
 ];
 
 interface ProgressStepperProps {

@@ -47,12 +47,23 @@ const drawProductWithTransforms = (
   const centerX = width / 2;
   const centerY = height / 2;
 
+  // Calculate scale factor to convert preview pixels to canvas pixels
+  // If preview size wasn't captured, fall back to 1:1 ratio
+  const previewWidth = adjustments.previewSize?.width || width;
+  const previewHeight = adjustments.previewSize?.height || height;
+  const scaleX = previewWidth > 0 ? width / previewWidth : 1;
+  const scaleY = previewHeight > 0 ? height / previewHeight : 1;
+
+  // Scale the position values to match the canvas size
+  const scaledPositionX = adjustments.productPosition.x * scaleX;
+  const scaledPositionY = adjustments.productPosition.y * scaleY;
+
   ctx.save();
 
   // Move to center, apply transforms, then draw centered
   ctx.translate(
-    centerX + adjustments.productPosition.x,
-    centerY + adjustments.productPosition.y
+    centerX + scaledPositionX,
+    centerY + scaledPositionY
   );
   ctx.rotate((adjustments.productRotation * Math.PI) / 180);
   ctx.scale(adjustments.productScale / 100, adjustments.productScale / 100);
@@ -73,6 +84,7 @@ export default function FinalPage() {
   const {
     originalImagePreview,
     backgroundRemovedImage,
+    editedImage,
     maskImage,
     backgroundImage,
     adjustments,
@@ -83,11 +95,14 @@ export default function FinalPage() {
     resetWizard,
   } = useWizard();
 
+  // Use edited image if available, otherwise use background removed image
+  const productImage = editedImage || backgroundRemovedImage;
+
   const [error, setError] = useState<string | null>(null);
   const [hasComposited, setHasComposited] = useState(false);
 
   const compositeImages = useCallback(async () => {
-    if (!backgroundRemovedImage || !maskImage || !backgroundImage) return;
+    if (!productImage || !maskImage || !backgroundImage) return;
 
     setLoading(true);
     setError(null);
@@ -96,7 +111,7 @@ export default function FinalPage() {
       // Load all images
       const [bgImg, productImg, maskImg] = await Promise.all([
         loadImage(backgroundImage),
-        loadImage(backgroundRemovedImage),
+        loadImage(productImage),
         loadImage(maskImage),
       ]);
 
@@ -126,11 +141,11 @@ export default function FinalPage() {
     } finally {
       setLoading(false);
     }
-  }, [backgroundRemovedImage, maskImage, backgroundImage, adjustments, setFinalImage, setLoading]);
+  }, [productImage, maskImage, backgroundImage, adjustments, setFinalImage, setLoading]);
 
   // Redirect if missing required images
   useEffect(() => {
-    if (!backgroundRemovedImage || !maskImage || !backgroundImage) {
+    if (!productImage || !maskImage || !backgroundImage) {
       router.push("/adjust");
       return;
     }
@@ -140,7 +155,7 @@ export default function FinalPage() {
       compositeImages();
     }
   }, [
-    backgroundRemovedImage,
+    productImage,
     maskImage,
     backgroundImage,
     hasComposited,
@@ -161,7 +176,7 @@ export default function FinalPage() {
     router.push("/");
   };
 
-  if (!backgroundRemovedImage || !backgroundImage) {
+  if (!productImage || !backgroundImage) {
     return null;
   }
 
@@ -206,7 +221,7 @@ export default function FinalPage() {
                 label="Original Image"
               />
               <ImagePreview
-                src={backgroundRemovedImage}
+                src={productImage}
                 alt="Background removed"
                 label="Background Removed"
                 showCheckered
